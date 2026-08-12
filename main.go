@@ -16,7 +16,12 @@ import (
 	"path/filepath"
 )
 
-func listFiles(dir string, files *[]string) error {
+type File struct {
+	Path string
+	Size int64
+}
+
+func gatherFiles(dir string, files *[]File) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -24,12 +29,20 @@ func listFiles(dir string, files *[]string) error {
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			err = listFiles(filepath.Join(dir, entry.Name()), files)
+			err = gatherFiles(filepath.Join(dir, entry.Name()), files)
 			if err != nil {
 				return err
 			}
 		} else {
-			*files = append(*files, filepath.Join(dir, entry.Name()))
+			info, err := entry.Info()
+			if err != nil {
+				return err
+			}
+
+			*files = append(*files, File{
+				Path: filepath.Join(dir, entry.Name()),
+				Size: info.Size(),
+			})
 		}
 	}
 
@@ -64,8 +77,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	var files []string
-	err = listFiles(dir, &files)
+	var files []File
+	err = gatherFiles(dir, &files)
 	if err != nil {
 		log.Fatal(err)
 	}
