@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 	"flag"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 type File struct {
 	Path string
 	Size int64
+	Hash string
 }
 
 func gatherFiles(dir string, filesBySize map[int64][]File) error {
@@ -44,12 +46,35 @@ func gatherFiles(dir string, filesBySize map[int64][]File) error {
 	return nil
 }
 
-func prune(filesBySize map[int64][]File) {
-	for key, files := range filesBySize {
+func prune[K comparable](filesByProperty map[K][]File) {
+	for key, files := range filesByProperty {
 		if len(files) < 2 {
-			delete(filesBySize, key)
+			delete(filesByProperty, key)
 		}
 	}
+}
+
+func getHashes(filesBySize map[int64][]File) (map[string][]File, error) {
+	filesByHash := make(map[string][]File)
+
+	for _, files := range filesBySize {
+		for _, file := range files {
+			data, err := os.ReadFile(file.Path)
+			if err != nil {
+				return nil, err
+			}
+
+			hash := fmt.Sprintf("%x", md5.Sum(data))
+
+			filesByHash[hash] = append(filesByHash[hash], File{
+				Path: file.Path,
+				Size: file.Size,
+				Hash: hash,
+			})
+		}
+	}
+
+	return filesByHash, nil
 }
 
 func main() {
@@ -89,8 +114,13 @@ func main() {
 
 	prune(filesBySize)
 
-	// check hash
+	filesByHash, err := getHashes(filesBySize)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	fmt.Println(filesBySize)
+	prune(filesByHash)
+
+	fmt.Println(filesByHash)
 }
 
