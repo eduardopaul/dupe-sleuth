@@ -16,6 +16,26 @@ import (
 	"path/filepath"
 )
 
+func listFiles(dir string, files *[]string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			err = listFiles(filepath.Join(dir, entry.Name()), files)
+			if err != nil {
+				return err
+			}
+		} else {
+			*files = append(*files, filepath.Join(dir, entry.Name()))
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -44,14 +64,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// list files in dir recursively
-	files, err := os.ReadDir(dir)
+	var files []string
+	err = listFiles(dir, &files)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	for _, file := range files {
-		fmt.Println(file)
-	}
+	fmt.Println(files)
 }
 
