@@ -1,12 +1,5 @@
 package main
 
-/*
-Parse arguments: directory
-list files in directory
-group them by size
-check duplicates inside each group by hash
-*/
-
 import (
 	"errors"
 	"flag"
@@ -21,7 +14,7 @@ type File struct {
 	Size int64
 }
 
-func gatherFiles(dir string, files *[]File) error {
+func gatherFiles(dir string, filesBySize map[int64][]File) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -29,7 +22,7 @@ func gatherFiles(dir string, files *[]File) error {
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			err = gatherFiles(filepath.Join(dir, entry.Name()), files)
+			err = gatherFiles(filepath.Join(dir, entry.Name()), filesBySize)
 			if err != nil {
 				return err
 			}
@@ -38,15 +31,25 @@ func gatherFiles(dir string, files *[]File) error {
 			if err != nil {
 				return err
 			}
+			
+			size := info.Size()
 
-			*files = append(*files, File{
+			filesBySize[size] = append(filesBySize[size], File{
 				Path: filepath.Join(dir, entry.Name()),
-				Size: info.Size(),
+				Size: size,
 			})
 		}
 	}
 
 	return nil
+}
+
+func prune(filesBySize map[int64][]File) {
+	for key, files := range filesBySize {
+		if len(files) < 2 {
+			delete(filesBySize, key)
+		}
+	}
 }
 
 func main() {
@@ -77,12 +80,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	var files []File
-	err = gatherFiles(dir, &files)
+	filesBySize := map[int64][]File{}
+
+	err = gatherFiles(dir, filesBySize)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println(files)
+	prune(filesBySize)
+
+	// check hash
+
+	fmt.Println(filesBySize)
 }
 
