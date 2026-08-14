@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -59,12 +60,27 @@ func getHashes(filesBySize map[int64][]File) (map[string][]File, error) {
 
 	for _, files := range filesBySize {
 		for _, file := range files {
-			data, err := os.ReadFile(file.Path)
+			h := md5.New()
+
+			f, err := os.Open(file.Path)
 			if err != nil {
 				return nil, err
 			}
+			defer f.Close()
 
-			hash := fmt.Sprintf("%x", md5.Sum(data))
+			for {
+				var n int64 = 1024
+				_, err := io.CopyN(h, f, n)
+				if err != nil {
+					if err != io.EOF {
+						log.Println("Encountered error %w when hashing file %s.", err, file)
+					}
+
+					break
+				}
+			}
+
+			hash := fmt.Sprintf("%x", h.Sum(nil))
 
 			filesByHash[hash] = append(filesByHash[hash], File{
 				Path: file.Path,
