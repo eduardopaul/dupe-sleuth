@@ -15,22 +15,29 @@ type File struct {
 	Hash string
 }
 
-func gatherFiles(dir string, filesBySize map[int64][]File) error {
+func gatherFiles(dir string) (map[int64][]File, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	filesBySize := map[int64][]File{}
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			err = gatherFiles(filepath.Join(dir, entry.Name()), filesBySize)
+			entryFilesBySize, err := gatherFiles(filepath.Join(dir, entry.Name()))
 			if err != nil {
-				return err
+				return nil, err
 			}
+
+			for size, sliceOfFile := range entryFilesBySize {
+				filesBySize[size] = append(filesBySize[size], sliceOfFile...)
+			}
+
 		} else {
 			info, err := entry.Info()
 			if err != nil {
-				return err
+				return nil, err
 			}
 			
 			size := info.Size()
@@ -42,7 +49,7 @@ func gatherFiles(dir string, filesBySize map[int64][]File) error {
 		}
 	}
 
-	return nil
+	return filesBySize, nil
 }
 
 func prune[K comparable](filesByProperty map[K][]File) {
@@ -94,9 +101,7 @@ func getHashes(filesBySize map[int64][]File) (map[string][]File, error) {
 func main() {
 	var dir string = Parse()
 
-	filesBySize := map[int64][]File{}
-
-	err := gatherFiles(dir, filesBySize)
+	filesBySize, err := gatherFiles(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
