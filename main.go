@@ -115,6 +115,11 @@ func main() {
 
 	prune(filesByHash)
 
-	fmt.Println(filesByHash)
+	for _, sliceOfFile := range filesBySize {
+		fmt.Println("Duplicate group:")
+		for _, file := range sliceOfFile {
+			fmt.Println("-", file.Path)
+		}
+	}
 }
 
