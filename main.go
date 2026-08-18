@@ -53,36 +53,46 @@ func gatherFiles(dir string) (map[int64][]File, error) {
 	return filesBySize, nil
 }
 
-func filterByFirstBytes(filesBySize map[int64][]File, n int64) (map[string][]File, error) {
+func filterByFirstBytes(filesBySize map[int64][]File, n int64) map[string][]File {
 	filesByFirstBytesHash := map[string][]File{}
 
 	for _, sliceOfFile := range filesBySize {
 		for _, file := range sliceOfFile {
-			f, err := os.Open(file.Path)
+			hash, err := processHash(file, n)
 			if err != nil {
-				log.Printf("Encountered error %w while trying to open file %s.\n", err, file.Path)
+				log.Printf("Encountered error %w while handling file %s.\n", err, file.Path)
 				continue
 			}
 
-			h := md5.New()
-
-			_, err = io.CopyN(h, f, n)
-			if err != nil {
-				if err != io.EOF {
-					log.Printf("Encountered error %w when hashing file %s.\n", err, file)
-					continue
-				}
-			}
-
-			hash := fmt.Sprintf("%x", h.Sum(nil))
 			file.FirstBytesHash = hash
 			filesByFirstBytesHash[hash] = append(filesByFirstBytesHash[hash], file)
-
-			f.Close()
 		}
 	}
 
-	return filesByFirstBytesHash, nil
+	return filesByFirstBytesHash
+}
+
+func processHash(file File, n int64) (string, error) {
+		h := md5.New()
+
+		f, err := os.Open(file.Path)
+		if err != nil {
+			return "", err
+		}
+		defer f.Close()
+
+		if n == 0 {
+			_, err = io.Copy(h, f)
+		} else {
+			_, err = io.CopyN(h, f, n)
+		}
+
+		if err != nil && err != io.EOF {
+			return "", err
+		}
+
+		hash := fmt.Sprintf("%x", h.Sum(nil))
+		return hash, nil
 }
 
 func prune[K comparable](filesByProperty map[K][]File) {
@@ -93,36 +103,23 @@ func prune[K comparable](filesByProperty map[K][]File) {
 	}
 }
 
-func getHashes(filesByFirstBytesHash map[string][]File) (map[string][]File, error) {
+func getHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
 	filesByHash := make(map[string][]File)
 
 	for _, files := range filesByFirstBytesHash {
 		for _, file := range files {
-			h := md5.New()
-
-			f, err := os.Open(file.Path)
+			hash, err := processHash(file, 0)
 			if err != nil {
-				return nil, err
-			}
-
-			_, err = io.Copy(h, f)
-			if err != nil {
-				if err != io.EOF {
-					log.Printf("Encountered error %w when hashing file %s.\n", err, file)
-				}
-
+				log.Printf("Encountered error %w while hashing file %s.\n", err, file.Path)
 				break
 			}
 
-			hash := fmt.Sprintf("%x", h.Sum(nil))
 			file.Hash = hash
 			filesByHash[hash] = append(filesByHash[hash], file)
-
-			f.Close()
 		}
 	}
 
-	return filesByHash, nil
+	return filesByHash
 }
 
 func main() {
@@ -144,12 +141,7 @@ func main() {
 		fmt.Println()
 	}
 
-	// Filter by first bytes.
-	filesByFirstBytesHash, err := filterByFirstBytes(filesBySize, 8)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	filesByFirstBytesHash := filterByFirstBytes(filesBySize, 8)
 	prune(filesByFirstBytesHash)
 
 	fmt.Println("Duplicate groups after first-bytes filtering:")
@@ -161,11 +153,7 @@ func main() {
 		fmt.Println()
 	}
 
-	filesByHash, err := getHashes(filesByFirstBytesHash)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	filesByHash := getHashes(filesByFirstBytesHash)
 	prune(filesByHash)
 
 	fmt.Println("Duplicate groups after hash filtering:")
