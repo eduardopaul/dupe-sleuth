@@ -13,10 +13,10 @@ type File struct {
 	Path string
 	Size int64
 	Hash string
-	FirstBytesHash string
+	FirstBytes string
 }
 
-func gatherFiles(dir string) (map[int64][]File, error) {
+func filterBySizes(dir string) (map[int64][]File, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func gatherFiles(dir string) (map[int64][]File, error) {
 
 	for _, entry := range entries {
 		if entry.IsDir() {
-			entryFilesBySize, err := gatherFiles(filepath.Join(dir, entry.Name()))
+			entryFilesBySize, err := filterBySizes(filepath.Join(dir, entry.Name()))
 			if err != nil {
 				return nil, err
 			}
@@ -54,25 +54,61 @@ func gatherFiles(dir string) (map[int64][]File, error) {
 }
 
 func filterByFirstBytes(filesBySize map[int64][]File, n int64) map[string][]File {
-	filesByFirstBytesHash := map[string][]File{}
+	filesByFirstBytes := map[string][]File{}
 
 	for _, sliceOfFile := range filesBySize {
 		for _, file := range sliceOfFile {
-			hash, err := processHash(file, n)
+			firstBytes, err := getFirstBytes(file, n)
 			if err != nil {
 				log.Printf("Encountered error %w while handling file %s.\n", err, file.Path)
 				continue
 			}
 
-			file.FirstBytesHash = hash
-			filesByFirstBytesHash[hash] = append(filesByFirstBytesHash[hash], file)
+			firstBytesString := string(firstBytes)
+			file.FirstBytes = firstBytesString
+			filesByFirstBytes[firstBytesString] = append(filesByFirstBytes[firstBytesString], file)
 		}
 	}
 
-	return filesByFirstBytesHash
+	return filesByFirstBytes
 }
 
-func processHash(file File, n int64) (string, error) {
+func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
+	filesByHash := make(map[string][]File)
+
+	for _, files := range filesByFirstBytesHash {
+		for _, file := range files {
+			hash, err := hashFile(file)
+			if err != nil {
+				log.Printf("Encountered error %w while hashing file %s.\n", err, file.Path)
+				continue
+			}
+
+			file.Hash = hash
+			filesByHash[hash] = append(filesByHash[hash], file)
+		}
+	}
+
+	return filesByHash
+}
+
+func getFirstBytes(file File, n int64) ([]byte, error) {
+	f, err := os.Open(file.Path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	b := make([]byte, min(file.Size, n))
+	_, err = io.ReadFull(f, b)
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+func hashFile(file File) (string, error) {
 		h := md5.New()
 
 		f, err := os.Open(file.Path)
@@ -81,13 +117,8 @@ func processHash(file File, n int64) (string, error) {
 		}
 		defer f.Close()
 
-		if n == 0 {
-			_, err = io.Copy(h, f)
-		} else {
-			_, err = io.CopyN(h, f, n)
-		}
-
-		if err != nil && err != io.EOF {
+		_, err = io.Copy(h, f)
+		if err != nil {
 			return "", err
 		}
 
@@ -103,29 +134,10 @@ func prune[K comparable](filesByProperty map[K][]File) {
 	}
 }
 
-func getHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
-	filesByHash := make(map[string][]File)
-
-	for _, files := range filesByFirstBytesHash {
-		for _, file := range files {
-			hash, err := processHash(file, 0)
-			if err != nil {
-				log.Printf("Encountered error %w while hashing file %s.\n", err, file.Path)
-				break
-			}
-
-			file.Hash = hash
-			filesByHash[hash] = append(filesByHash[hash], file)
-		}
-	}
-
-	return filesByHash
-}
-
 func main() {
 	var dir string = Parse()
 
-	filesBySize, err := gatherFiles(dir)
+	filesBySize, err := filterBySizes(dir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -141,19 +153,20 @@ func main() {
 		fmt.Println()
 	}
 
-	filesByFirstBytesHash := filterByFirstBytes(filesBySize, 8)
-	prune(filesByFirstBytesHash)
+	filesByFirstBytes := filterByFirstBytes(filesBySize, 8)
+	prune(filesByFirstBytes)
 
 	fmt.Println("Duplicate groups after first-bytes filtering:")
-	for hash, sliceOfFile := range filesByFirstBytesHash {
-		fmt.Printf("	%s\n", hash)
+	for firstBytes, sliceOfFile := range filesByFirstBytes {
+		fmt.Printf("	\"%s\"\n", firstBytes)
 		for _, file := range sliceOfFile {
 			fmt.Println("	-", file.Path)
 		}
 		fmt.Println()
 	}
 
-	filesByHash := getHashes(filesByFirstBytesHash)
+	filesByHash := filterByHashes(filesByFirstBytes)
+
 	prune(filesByHash)
 
 	fmt.Println("Duplicate groups after hash filtering:")
