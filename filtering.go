@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"log"
 	"os"
+	"sync"
 )
 
 type File struct {
@@ -73,8 +74,32 @@ func filterByFirstBytes(filesBySize map[int64][]File, n int64) map[string][]File
 func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
 	filesByHash := make(map[string][]File)
 
-	for _, files := range filesByFirstBytesHash {
-		for _, file := range files {
+	files := []File{}
+	for _, sliceOfFiles := range filesByFirstBytesHash {
+		for _, file := range sliceOfFiles {
+			files = append(files, file)
+		}
+	}
+
+	if true {
+		var wg sync.WaitGroup
+
+		for _, file := range files{
+			wg.Go(func() {
+				hash, err := hashFile(file)
+				if err != nil {
+					log.Printf("Encountered error %w while hashing file %s.\n", err, file.Path)
+					return
+				}
+
+				file.Hash = hash
+				filesByHash[hash] = append(filesByHash[hash], file)
+			})
+		}
+
+		wg.Wait()
+	} else {
+		for _, file := range files{
 			hash, err := hashFile(file)
 			if err != nil {
 				log.Printf("Encountered error %w while hashing file %s.\n", err, file.Path)
@@ -88,3 +113,4 @@ func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
 
 	return filesByHash
 }
+
