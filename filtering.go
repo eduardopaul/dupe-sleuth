@@ -71,7 +71,7 @@ func filterByFirstBytes(filesBySize map[int64][]File, n int64) map[string][]File
 	return filesByFirstBytes
 }
 
-func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
+func filterByHashes(filesByFirstBytesHash map[string][]File, concurrent *bool) map[string][]File {
 	filesByHash := make(map[string][]File)
 
 	files := []File{}
@@ -81,7 +81,7 @@ func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
 		}
 	}
 
-	if true {
+	if *concurrent {
 		var wg sync.WaitGroup
 
 		for _, file := range files{
@@ -98,6 +98,7 @@ func filterByHashes(filesByFirstBytesHash map[string][]File) map[string][]File {
 		}
 
 		wg.Wait()
+
 	} else {
 		for _, file := range files{
 			hash, err := hashFile(file)

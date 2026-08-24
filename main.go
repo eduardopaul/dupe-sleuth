@@ -6,7 +6,10 @@ import (
 )
 
 func main() {
-	var dir string = Parse()
+	options := Parse()
+
+	var dir string = options.Dir
+	var concurrent *bool = options.Concurrent
 
 	filesBySize, err := filterBySizes(dir)
 	if err != nil {
@@ -36,7 +39,7 @@ func main() {
 		fmt.Println()
 	}
 
-	filesByHash := filterByHashes(filesByFirstBytes)
+	filesByHash := filterByHashes(filesByFirstBytes, concurrent)
 
 	prune(filesByHash)
 

@@ -2,14 +2,21 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	flag "github.com/spf13/pflag"
 )
 
-func Parse() string {
+var concurrentFlag = flag.BoolP("concurrent", "c", false, "Process hashing concurrently.")
+
+type Options struct {
+	Dir string
+	Concurrent *bool
+}
+
+func Parse() Options {
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -37,6 +44,9 @@ func Parse() string {
 		os.Exit(1)
 	}
 
-	return dir
+	return Options{
+		Dir: dir,
+		Concurrent: concurrentFlag,
+	}
 }
 
