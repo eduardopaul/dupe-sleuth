@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 )
+
 
 func main() {
 	options := Parse()
 
+	var logFlag *bool = options.Log
 	var dir string = options.Dir
 	var concurrent *bool = options.Concurrent
 
@@ -18,38 +19,21 @@ func main() {
 
 	prune(filesBySize)
 
-	fmt.Println("Duplicate groups after size filtering:")
-	for size, sliceOfFile := range filesBySize {
-		fmt.Printf("	%d bytes\n", size)
-		for _, file := range sliceOfFile {
-			fmt.Println("	-", file.Path)
-		}
-		fmt.Println()
+	if *logFlag {
+		logSize(filesBySize)
 	}
 
 	filesByFirstBytes := filterByFirstBytes(filesBySize, 8)
 	prune(filesByFirstBytes)
 
-	fmt.Println("Duplicate groups after first-bytes filtering:")
-	for firstBytes, sliceOfFile := range filesByFirstBytes {
-		fmt.Printf("	\"%s\"\n", firstBytes)
-		for _, file := range sliceOfFile {
-			fmt.Println("	-", file.Path)
-		}
-		fmt.Println()
+	if *logFlag {
+		logBytes(filesByFirstBytes)
 	}
 
 	filesByHash := filterByHashes(filesByFirstBytes, concurrent)
 
 	prune(filesByHash)
 
-	fmt.Println("Duplicate groups after hash filtering:")
-	for hash, sliceOfFile := range filesByHash {
-		fmt.Printf("	%s\n", hash)
-		for _, file := range sliceOfFile {
-			fmt.Println("	-", file.Path)
-		}
-		fmt.Println()
-	}
+	printGroups(filesByHash)
 }
 
