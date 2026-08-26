@@ -11,11 +11,13 @@ import (
 
 var concurrentFlag = flag.BoolP("concurrent", "c", false, "Process hashing concurrently.")
 var logFlag = flag.Bool("log", false, "Enable logging.")
+var interactiveFlag = flag.BoolP("interactive", "i", false, "Enter interactive REPL.")
 
 type Options struct {
 	Dir string
 	Concurrent *bool
 	Log *bool
+	Interactive *bool
 }
 
 func Parse() Options {
@@ -50,6 +52,7 @@ func Parse() Options {
 		Dir: dir,
 		Concurrent: concurrentFlag,
 		Log: logFlag,
+		Interactive: interactiveFlag,
 	}
 }
 

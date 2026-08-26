@@ -1,4 +1,4 @@
-module github.com/eduardopaul/dupe-sleuth
+module dupe-sleuth
 
 go 1.26.5
 
