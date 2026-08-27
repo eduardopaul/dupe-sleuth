@@ -28,10 +28,15 @@ func Run() {
 		}
 		
 		cmdName := tokens[0]
+		if cmdName == "aid" {
+			Aid()
+			continue
+		}
 
-		cmd, ok := GetCommands()[cmdName]
+		cmd, ok := commands[cmdName]
 		if !ok {
 			fmt.Printf("Invalid command: %s\n", cmdName)
+			Aid()
 			continue
 		}
 
