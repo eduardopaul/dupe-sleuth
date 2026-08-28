@@ -13,14 +13,14 @@ var concurrentFlag = flag.BoolP("concurrent", "c", false, "Process hashing concu
 var logFlag = flag.Bool("log", false, "Enable logging.")
 var interactiveFlag = flag.BoolP("interactive", "i", false, "Enter interactive REPL.")
 
-type Options struct {
+type cliOptions struct {
 	Dir string
 	Concurrent *bool
-	Log *bool
+	Logging *bool
 	Interactive *bool
 }
 
-func Parse() Options {
+func Parse() cliOptions {
 	flag.Parse()
 
 	if flag.NArg() < 1 {
@@ -48,11 +48,13 @@ func Parse() Options {
 		os.Exit(1)
 	}
 
-	return Options{
+	return cliOptions{
 		Dir: dir,
 		Concurrent: concurrentFlag,
-		Log: logFlag,
+		Logging: logFlag,
 		Interactive: interactiveFlag,
 	}
 }
+
+var Options = Parse()
 

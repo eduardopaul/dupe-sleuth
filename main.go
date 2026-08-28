@@ -6,17 +6,10 @@ import (
 )
 
 func main() {
-	options := Parse()
-
-	var logging *bool = options.Log
-	var dir string = options.Dir
-	var concurrent *bool = options.Concurrent
-	var interactive *bool = options.Interactive
-
-	if *interactive {
+	if *Options.Interactive {
 		repl.Run()
 	} else {
-		dupeFiles, err := sleuth(dir, *logging, *concurrent)
+		dupeFiles, err := sleuth(Options.Dir, *Options.Logging, *Options.Concurrent)
 		if err != nil {
 			log.Fatal(err)
 		}
