@@ -40,7 +40,9 @@ func Run() {
 			continue
 		}
 
-		cmd.callback()
+		args := tokens[1:]
+
+		cmd.callback(args)
 	}
 }
 

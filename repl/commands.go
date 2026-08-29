@@ -1,44 +1,52 @@
 package repl
 
 import (
+	"dupe-sleuth/app"
 	"fmt"
 	"os"
 )
 
 type Command struct {
 	description string
-	callback func() error
+	callback func([]string) error
 }
+
+var opt = app.Options
+
+var DupeFiles = map[string][]app.File{}
 
 var commands = map[string]Command{
 	"flee": {
 		description: "Exit dupe-sleuth, letting go of any changes.",
-		callback: func() error {
+		callback: func(args []string) error {
 			os.Exit(0)
 			return nil
 		},
 	},
 	"sleuth": {
 		description: "Find duplicate files.",
-		callback: func() error {
-			return nil
+		callback: func(args []string) error {
+			var err error
+			DupeFiles, err = app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
+			return err
 		},
 	},
 	"unveil": {
 		description: "Show the duplicate files that have already been found.",
-		callback: func() error {
+		callback: func(args []string) error {
+			app.PrintGroups(DupeFiles)
 			return nil
 		},
 	},
 	"stamp": {
 		description: "Mark file to receive action.",
-		callback: func() error {
+		callback: func(args []string) error {
 			return nil
 		},
 	},
 	"efface": {
 		description: "Erase marked files.",
-		callback: func() error {
+		callback: func(args []string) error {
 			return nil
 		},
 	},

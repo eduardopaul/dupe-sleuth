@@ -12,7 +12,7 @@ func getPlural(num int) string {
 
 func PrintGroups(filesByHash map[string][]File) {
 	numGroups := len(filesByHash)
-	numFiles := 3
+	numFiles := 999
 
 	fmt.Printf(
 		"\nFound %d duplicate group%s, totaling %d file%s.\n",
