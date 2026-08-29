@@ -1,20 +1,22 @@
 package main
 
 import (
+	"dupe-sleuth/app"
 	"dupe-sleuth/repl"
 	"log"
 )
 
 func main() {
-	if *Options.Interactive {
+	opt := app.Options
+	if *opt.Interactive {
 		repl.Run()
 	} else {
-		dupeFiles, err := sleuth(Options.Dir, *Options.Logging, *Options.Concurrent)
+		dupeFiles, err := app.Sleuth(opt.Dir, *opt.Logging, *opt.Concurrent)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		printGroups(dupeFiles)
+		app.PrintGroups(dupeFiles)
 	}
 }
 

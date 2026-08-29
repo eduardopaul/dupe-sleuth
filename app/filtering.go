@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"path/filepath"
@@ -115,7 +115,7 @@ func filterByHashes(filesByFirstBytesHash map[string][]File, concurrent bool) ma
 	return filesByHash
 }
 
-func sleuth(dir string, logging bool, concurrent bool) (map[string][]File, error) {
+func Sleuth(dir string, logging bool, concurrent bool) (map[string][]File, error) {
 	filesBySize, err := filterBySizes(dir)
 	if err != nil {
 		return nil, err

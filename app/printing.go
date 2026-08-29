@@ -1,4 +1,4 @@
-package main
+package app
 
 import "fmt"
 
@@ -10,7 +10,7 @@ func getPlural(num int) string {
 	}
 }
 
-func printGroups(filesByHash map[string][]File) {
+func PrintGroups(filesByHash map[string][]File) {
 	numGroups := len(filesByHash)
 	numFiles := 3
 
