@@ -4,6 +4,7 @@ import (
 	"dupe-sleuth/app"
 	"fmt"
 	"os"
+	"slices"
 )
 
 type Command struct {
@@ -27,7 +28,22 @@ var commands = map[string]Command{
 		description: "Find duplicate files.",
 		callback: func(args []string) error {
 			var err error
-			DupeFiles, err = app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
+			newDupeFiles, err := app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
+
+			for hash, newSliceOfFile := range newDupeFiles {
+				oldSliceOfFile, exists := DupeFiles[hash]
+
+				if exists {
+					for _, file := range newSliceOfFile {
+						if !slices.Contains(oldSliceOfFile, file) {
+							DupeFiles[hash] = append(DupeFiles[hash], file)
+						}
+					}
+				} else {
+					DupeFiles[hash] = newSliceOfFile
+				}
+			}
+
 			return err
 		},
 	},
