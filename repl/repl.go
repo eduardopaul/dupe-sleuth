@@ -42,7 +42,10 @@ func Run() {
 
 		args := tokens[1:]
 
-		cmd.callback(args)
+		err := cmd.callback(args)
+		if err != nil{
+			fmt.Println(err)
+		}
 	}
 }
 

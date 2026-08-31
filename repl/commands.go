@@ -2,6 +2,7 @@ package repl
 
 import (
 	"dupe-sleuth/app"
+	"errors"
 	"fmt"
 	"os"
 	"slices"
@@ -29,6 +30,12 @@ var commands = map[string]Command{
 		callback: func(args []string) error {
 			var err error
 			newDupeFiles, err := app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
+			if err != nil {
+				if errors.Is(err, os.ErrNotExist) {
+					return fmt.Errorf(`Value "%s" does not exist or is not a valid directory.`, args[0])
+				}
+				return err
+			}
 
 			for hash, newSliceOfFile := range newDupeFiles {
 				oldSliceOfFile, exists := DupeFiles[hash]
