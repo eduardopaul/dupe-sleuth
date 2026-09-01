@@ -73,6 +73,29 @@ var commands = map[string]Command{
 			return nil
 		},
 	},
+	"whereabouts": {
+		description: "Print the current working directory.",
+		callback: func(args []string) error {
+			wd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(wd)
+
+			return nil
+		},
+	},
+	"wander": {
+		description: "Change the current working directory.",
+		callback: func(args []string) error {
+			err := os.Chdir(args[0])
+			if err != nil {
+				return err
+			}
+			return nil
+		},
+	},
 }
 
 func Aid() error {
