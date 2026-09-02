@@ -96,6 +96,26 @@ var commands = map[string]Command{
 			return nil
 		},
 	},
+	"catalog": {
+		description: "List the current working directory content.",
+		callback: func(args []string) error {
+			wd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			list, err := os.ReadDir(wd)
+			if err != nil {
+				return err
+			}
+
+			for _, item := range list {
+				fmt.Print(item, "        ")
+			}
+
+			return nil
+		},
+	},
 }
 
 func Aid() error {
