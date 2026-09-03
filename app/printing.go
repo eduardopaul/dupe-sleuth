@@ -28,23 +28,27 @@ func PrintGroups(filesByHash map[string][]File) {
 	fmt.Println()
 	fileIdx := 1
 	for _, sliceOfFile := range filesByHash {
-		nFiles := len(sliceOfFile)
-		size := sliceOfFile[0].Size
-
-		fmt.Printf(
-			"Group %d, %d files, %d byte%s each:\n",
-			fileIdx,
-			nFiles,
-			size,
-			getPlural(int(size)),
-		)
-
-		fileIdx++
-
-		for idx, file := range sliceOfFile {
-			fmt.Printf("  %d. %s\n", idx+1, file.Path)
-		}
-		fmt.Println()
+		PrintGroup(sliceOfFile, fileIdx)
 	}
+}
+
+func PrintGroup(group []File, fileIdx int) {
+	nFiles := len(group)
+	size := group[0].Size
+
+	fmt.Printf(
+		"Group %d, %d files, %d byte%s each:\n",
+		fileIdx,
+		nFiles,
+		size,
+		getPlural(int(size)),
+	)
+
+	fileIdx++
+
+	for idx, file := range group {
+		fmt.Printf("  %d. %s\n", idx+1, file.Path)
+	}
+	fmt.Println()
 }
 

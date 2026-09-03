@@ -15,7 +15,6 @@ type Command struct {
 
 var opt = app.Options
 
-var DupeFiles = map[string][]app.File{}
 
 var commands = map[string]Command{
 	"flee": {
@@ -38,16 +37,16 @@ var commands = map[string]Command{
 			}
 
 			for hash, newSliceOfFile := range newDupeFiles {
-				oldSliceOfFile, exists := DupeFiles[hash]
+				oldSliceOfFile, exists := app.DupeFiles[hash]
 
 				if exists {
 					for _, file := range newSliceOfFile {
 						if !slices.Contains(oldSliceOfFile, file) {
-							DupeFiles[hash] = append(DupeFiles[hash], file)
+							app.DupeFiles[hash] = append(app.DupeFiles[hash], file)
 						}
 					}
 				} else {
-					DupeFiles[hash] = newSliceOfFile
+					app.DupeFiles[hash] = newSliceOfFile
 				}
 			}
 
@@ -57,7 +56,7 @@ var commands = map[string]Command{
 	"unveil": {
 		description: "Show the duplicate files that have already been found.",
 		callback: func(args []string) error {
-			app.PrintGroups(DupeFiles)
+			app.PrintGroups(app.DupeFiles)
 			return nil
 		},
 	},

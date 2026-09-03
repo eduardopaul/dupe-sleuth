@@ -14,6 +14,8 @@ type File struct {
 	FirstBytes string
 }
 
+var DupeFiles = map[string][]File{}
+
 func filterBySizes(dir string) (map[int64][]File, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
