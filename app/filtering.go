@@ -7,13 +7,6 @@ import (
 	"sync"
 )
 
-type File struct {
-	Path string
-	Size int64
-	Hash string
-	FirstBytes string
-}
-
 var DupeFiles = map[string][]File{}
 
 func filterBySizes(dir string) (map[int64][]File, error) {

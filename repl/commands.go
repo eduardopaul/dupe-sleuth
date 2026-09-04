@@ -37,16 +37,16 @@ var commands = map[string]Command{
 			}
 
 			for hash, newSliceOfFile := range newDupeFiles {
-				oldSliceOfFile, exists := app.DupeFiles[hash]
+				oldSliceOfFile, exists := app.App.Duplicates[hash]
 
 				if exists {
 					for _, file := range newSliceOfFile {
 						if !slices.Contains(oldSliceOfFile, file) {
-							app.DupeFiles[hash] = append(app.DupeFiles[hash], file)
+							app.App.Duplicates[hash] = append(app.App.Duplicates[hash], file)
 						}
 					}
 				} else {
-					app.DupeFiles[hash] = newSliceOfFile
+					app.App.Duplicates[hash] = newSliceOfFile
 				}
 			}
 
@@ -56,7 +56,7 @@ var commands = map[string]Command{
 	"unveil": {
 		description: "Show the duplicate files that have already been found.",
 		callback: func(args []string) error {
-			app.PrintGroups(app.DupeFiles)
+			app.PrintGroups(app.App.Duplicates)
 			return nil
 		},
 	},
