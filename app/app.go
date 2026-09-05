@@ -11,7 +11,4 @@ type AppType struct {
 	Duplicates map[string][]File
 }
 
-var App = AppType{
-	Duplicates: map[string][]File{},
-}
 

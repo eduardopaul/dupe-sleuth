@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"dupe-sleuth/app"
 	"bufio"
 	"fmt"
 	"os"
@@ -15,6 +16,10 @@ func cleanInput(input string) []string {
 
 func Run() {
 	scanner := bufio.NewScanner(os.Stdin)
+
+	appStruct := app.AppType{
+		Duplicates: map[string][]app.File{},
+	}
 
 	for {
 		fmt.Print("\ndupe-sleuth > ")
@@ -42,7 +47,8 @@ func Run() {
 
 		args := tokens[1:]
 
-		err := cmd.callback(args)
+		var err error
+		appStruct, err = cmd.callback(appStruct, args)
 		if err != nil{
 			fmt.Println(err)
 		}

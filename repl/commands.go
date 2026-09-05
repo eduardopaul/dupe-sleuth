@@ -10,7 +10,7 @@ import (
 
 type Command struct {
 	description string
-	callback func([]string) error
+	callback func(app.AppType, []string) (app.AppType, error)
 }
 
 var opt = app.Options
@@ -19,100 +19,100 @@ var opt = app.Options
 var commands = map[string]Command{
 	"flee": {
 		description: "Exit dupe-sleuth, letting go of any changes.",
-		callback: func(args []string) error {
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			os.Exit(0)
-			return nil
+			return appStruct, nil
 		},
 	},
 	"sleuth": {
 		description: "Find duplicate files.",
-		callback: func(args []string) error {
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			var err error
 			newDupeFiles, err := app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
-					return fmt.Errorf(`Value "%s" does not exist or is not a valid directory.`, args[0])
+					return appStruct, fmt.Errorf(`Value "%s" does not exist or is not a valid directory.`, args[0])
 				}
-				return err
+				return appStruct, err
 			}
 
 			for hash, newSliceOfFile := range newDupeFiles {
-				oldSliceOfFile, exists := app.App.Duplicates[hash]
+				oldSliceOfFile, exists := appStruct.Duplicates[hash]
 
 				if exists {
 					for _, file := range newSliceOfFile {
 						if !slices.Contains(oldSliceOfFile, file) {
-							app.App.Duplicates[hash] = append(app.App.Duplicates[hash], file)
+							appStruct.Duplicates[hash] = append(appStruct.Duplicates[hash], file)
 						}
 					}
 				} else {
-					app.App.Duplicates[hash] = newSliceOfFile
+					appStruct.Duplicates[hash] = newSliceOfFile
 				}
 			}
 
-			return err
+			return appStruct, err
 		},
 	},
 	"unveil": {
 		description: "Show the duplicate files that have already been found.",
-		callback: func(args []string) error {
-			app.PrintGroups(app.App.Duplicates)
-			return nil
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+			app.PrintGroups(appStruct.Duplicates)
+			return appStruct, nil
 		},
 	},
 	"stamp": {
 		description: "Mark file to receive action.",
-		callback: func(args []string) error {
-			return nil
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+			return appStruct, nil
 		},
 	},
 	"efface": {
 		description: "Erase marked files.",
-		callback: func(args []string) error {
-			return nil
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+			return appStruct, nil
 		},
 	},
 	"whereabouts": {
 		description: "Print the current working directory.",
-		callback: func(args []string) error {
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			wd, err := os.Getwd()
 			if err != nil {
-				return err
+				return appStruct, err
 			}
 
 			fmt.Println(wd)
 
-			return nil
+			return appStruct, nil
 		},
 	},
 	"wander": {
 		description: "Change the current working directory.",
-		callback: func(args []string) error {
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			err := os.Chdir(args[0])
 			if err != nil {
-				return err
+				return appStruct, err
 			}
-			return nil
+			return appStruct, nil
 		},
 	},
 	"catalog": {
 		description: "List the current working directory content.",
-		callback: func(args []string) error {
+		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			wd, err := os.Getwd()
 			if err != nil {
-				return err
+				return appStruct, err
 			}
 
 			list, err := os.ReadDir(wd)
 			if err != nil {
-				return err
+				return appStruct, err
 			}
 
 			for _, item := range list {
 				fmt.Print(item, "        ")
 			}
 
-			return nil
+			return appStruct, nil
 		},
 	},
 }
