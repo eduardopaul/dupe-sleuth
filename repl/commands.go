@@ -1,6 +1,7 @@
 package repl
 
 import (
+	"bufio"
 	"dupe-sleuth/app"
 	"errors"
 	"fmt"
@@ -47,6 +48,7 @@ var commands = map[string]Command{
 					}
 				} else {
 					appStruct.Duplicates[hash] = newSliceOfFile
+					appStruct.Order = append(appStruct.Order, hash)
 				}
 			}
 
@@ -63,6 +65,18 @@ var commands = map[string]Command{
 	"stamp": {
 		description: "Mark file to receive action.",
 		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+			scanner := bufio.NewScanner(os.Stdin)
+			for idx, hash := range appStruct.Order {
+				fmt.Println()
+				for idxFile, file := range appStruct.Duplicates[hash] {
+					fmt.Println("  ", idxFile, file.Path)
+				}
+				fmt.Printf("Group %d. Choose which file to keep [number or ?]: ", idx)
+				scanner.Scan()
+				choice := scanner.Text()
+				fmt.Printf("Selected file %s\n", choice)
+			}
+
 			return appStruct, nil
 		},
 	},

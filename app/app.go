@@ -9,6 +9,7 @@ type File struct {
 
 type AppType struct {
 	Duplicates map[string][]File
+	Order []string
 }
 
 
