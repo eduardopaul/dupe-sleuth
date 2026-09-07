@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strconv"
 )
 
 type Command struct {
@@ -16,6 +17,30 @@ type Command struct {
 
 var opt = app.Options
 
+func choose(scanner *bufio.Scanner, files []app.File) int {
+	for idxFile, file := range files {
+		fmt.Println("  ", idxFile, file.Path)
+	}
+
+	var (
+		choice int
+		err error
+	)
+
+	for {
+		fmt.Printf("Choose which file to keep [0-%d]: ", len(files)-1)
+		scanner.Scan()
+		textChoice := scanner.Text()
+		choice, err = strconv.Atoi(textChoice)
+		if err != nil || choice < 0 || choice >= len(files) {
+			fmt.Print("Invalid choice. ")
+			continue
+		}
+		break
+	}
+
+	return choice
+}
 
 var commands = map[string]Command{
 	"flee": {
@@ -67,14 +92,13 @@ var commands = map[string]Command{
 		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
 			scanner := bufio.NewScanner(os.Stdin)
 			for idx, hash := range appStruct.Order {
+				fmt.Printf("Group %d\n", idx)
+
+				choice := choose(scanner, appStruct.Duplicates[hash])
+				
+				fmt.Printf("Selected file %d\n", choice)
+
 				fmt.Println()
-				for idxFile, file := range appStruct.Duplicates[hash] {
-					fmt.Println("  ", idxFile, file.Path)
-				}
-				fmt.Printf("Group %d. Choose which file to keep [number or ?]: ", idx)
-				scanner.Scan()
-				choice := scanner.Text()
-				fmt.Printf("Selected file %s\n", choice)
 			}
 
 			return appStruct, nil
