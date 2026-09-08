@@ -12,7 +12,7 @@ import (
 
 type Command struct {
 	description string
-	callback func(app.AppType, []string) (app.AppType, error)
+	callback func(app.State, []string) (app.State, error)
 }
 
 var opt = app.Options
@@ -45,112 +45,115 @@ func choose(scanner *bufio.Scanner, files []app.File) int {
 var commands = map[string]Command{
 	"flee": {
 		description: "Exit dupe-sleuth, letting go of any changes.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		callback: func(appState app.State, args []string) (app.State, error) {
 			os.Exit(0)
-			return appStruct, nil
+			return appState, nil
 		},
 	},
 	"sleuth": {
 		description: "Find duplicate files.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		callback: func(appState app.State, args []string) (app.State, error) {
 			var err error
 			newDupeFiles, err := app.Sleuth(args[0], *opt.Logging, *opt.Concurrent)
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
-					return appStruct, fmt.Errorf(`Value "%s" does not exist or is not a valid directory.`, args[0])
+					return appState, fmt.Errorf(`Value "%s" does not exist or is not a valid directory.`, args[0])
 				}
-				return appStruct, err
+				return appState, err
 			}
 
 			for hash, newSliceOfFile := range newDupeFiles {
-				oldSliceOfFile, exists := appStruct.Duplicates[hash]
+				oldSliceOfFile, exists := appState.Duplicates[hash]
 
 				if exists {
 					for _, file := range newSliceOfFile {
 						if !slices.Contains(oldSliceOfFile, file) {
-							appStruct.Duplicates[hash] = append(appStruct.Duplicates[hash], file)
+							appState.Duplicates[hash] = append(appState.Duplicates[hash], file)
 						}
 					}
 				} else {
-					appStruct.Duplicates[hash] = newSliceOfFile
-					appStruct.Order = append(appStruct.Order, hash)
+					appState.Duplicates[hash] = newSliceOfFile
+					appState.Order = append(appState.Order, hash)
 				}
 			}
 
-			return appStruct, err
+			return appState, err
 		},
 	},
 	"unveil": {
 		description: "Show the duplicate files that have already been found.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
-			app.PrintGroups(appStruct.Duplicates)
-			return appStruct, nil
+		callback: func(appState app.State, args []string) (app.State, error) {
+			app.PrintGroups(appState.Duplicates)
+			return appState, nil
 		},
 	},
 	"stamp": {
-		description: "Mark file to receive action.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		description: "Mark file to keep.",
+		callback: func(appState app.State, args []string) (app.State, error) {
 			scanner := bufio.NewScanner(os.Stdin)
-			for idx, hash := range appStruct.Order {
+
+			for idx, hash := range appState.Order {
 				fmt.Printf("Group %d\n", idx)
 
-				choice := choose(scanner, appStruct.Duplicates[hash])
+				choice := choose(scanner, appState.Duplicates[hash])
 				
+				appState.Marked[hash] = appState.Duplicates[hash][choice]
+
 				fmt.Printf("Selected file %d\n", choice)
 
 				fmt.Println()
 			}
 
-			return appStruct, nil
+			return appState, nil
 		},
 	},
 	"efface": {
 		description: "Erase marked files.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
-			return appStruct, nil
+		callback: func(appState app.State, args []string) (app.State, error) {
+			return appState, nil
 		},
 	},
 	"whereabouts": {
 		description: "Print the current working directory.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		callback: func(appState app.State, args []string) (app.State, error) {
 			wd, err := os.Getwd()
 			if err != nil {
-				return appStruct, err
+				return appState, err
 			}
 
 			fmt.Println(wd)
 
-			return appStruct, nil
+			return appState, nil
 		},
 	},
 	"wander": {
 		description: "Change the current working directory.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		callback: func(appState app.State, args []string) (app.State, error) {
 			err := os.Chdir(args[0])
 			if err != nil {
-				return appStruct, err
+				return appState, err
 			}
-			return appStruct, nil
+			return appState, nil
 		},
 	},
 	"catalog": {
 		description: "List the current working directory content.",
-		callback: func(appStruct app.AppType, args []string) (app.AppType, error) {
+		callback: func(appState app.State, args []string) (app.State, error) {
 			wd, err := os.Getwd()
 			if err != nil {
-				return appStruct, err
+				return appState, err
 			}
 
 			list, err := os.ReadDir(wd)
 			if err != nil {
-				return appStruct, err
+				return appState, err
 			}
 
 			for _, item := range list {
 				fmt.Print(item, "        ")
 			}
 
-			return appStruct, nil
+			return appState, nil
 		},
 	},
 }

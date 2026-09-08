@@ -7,9 +7,9 @@ type File struct {
 	FirstBytes string
 }
 
-type AppType struct {
+type State struct {
 	Duplicates map[string][]File
 	Order []string
+	Marked map[string]File
 }
-
 

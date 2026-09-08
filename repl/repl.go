@@ -17,8 +17,9 @@ func cleanInput(input string) []string {
 func Run() {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	appStruct := app.AppType{
+	appState := app.State{
 		Duplicates: map[string][]app.File{},
+		Marked: map[string]app.File{},
 	}
 
 	for {
@@ -48,7 +49,7 @@ func Run() {
 		args := tokens[1:]
 
 		var err error
-		appStruct, err = cmd.callback(appStruct, args)
+		appState, err = cmd.callback(appState, args)
 		if err != nil{
 			fmt.Println(err)
 		}
