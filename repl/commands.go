@@ -108,8 +108,21 @@ var commands = map[string]Command{
 		},
 	},
 	"efface": {
-		description: "Erase marked files.",
+		description: "Erase non-marked files.",
 		callback: func(appState app.State, args []string) (app.State, error) {
+			for hash, markedFile := range appState.Marked {
+				fmt.Println(hash, markedFile)
+				for idx, file := range appState.Duplicates[hash] {
+					fmt.Println("---", idx, file, markedFile == file)
+					if markedFile != file {
+						err := os.Remove(file.Path)
+						if err != nil {
+							return appState, err
+						}
+					}
+				}
+			}
+
 			return appState, nil
 		},
 	},
